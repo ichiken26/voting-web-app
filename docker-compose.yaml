@@ -1,0 +1,58 @@
+services:
+  # フロントエンド (Vue.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: my_vue_app
+    ports:
+      - "5173:5173"
+    volumes:
+      # ホストのfrontendフォルダをコンテナの/appに同期する
+      # これでコードを修正したら、すぐにコンテナに反映されるよ（ホットリロード）
+      - ./frontend:/app
+      # node_modulesは同期しないようにするおまじない
+      # こうしないと、WSLとコンテナでnode_modulesの差異が出て問題が起きることがあるんだ
+      - /app/node_modules
+    tty: true
+    stdin_open: true
+
+  # バックエンド (aiohttp)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: my_aiohttp_app
+    ports:
+      - "8000:8080"
+    volumes:
+      # こっちもホットリロードのためにソースコードを同期
+      - ./backend/src:/app
+    environment:
+      # データベース接続情報。dbサービスの環境変数と合わせるのを忘れないでね
+      - DATABASE_URL=postgresql://user:password@db:5432/mydatabase
+    # dbサービスが起動してからbackendを起動するようにする
+    depends_on:
+      - db
+
+  # データベース (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: my_postgres_db
+    environment:
+      # データベースの名前、ユーザー名、パスワードを設定
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      # ホストPCの5432ポートをコンテナの5432ポートにつなぐ
+      # これで、普段使ってるDBクライアントツールからも接続できるよ
+      - "5432:5432"
+    volumes:
+      # DBのデータを永続化するためのボリューム
+      # これがないとコンテナを消したらデータも全部消えちゃうから気をつけて！
+      - postgres_data:/var/lib/postgresql/data
+
+# 永続化に使うボリュームの定義
+volumes:
+  postgres_data:
