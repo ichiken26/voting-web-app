@@ -1,7 +1,6 @@
 <script setup>
 import { ref } from 'vue';
 
-// 親から渡されるpropsを定義
 const props = defineProps({
   battleInfo: {
     type: Object,
@@ -9,23 +8,29 @@ const props = defineProps({
   }
 });
 
-// 親に通知するためのemitを定義
 const emit = defineEmits(['vote']);
 
 // どのプレイヤーが選択されたかを管理するローカルなstate
 const selectedPlayerId = ref(null);
 
 // 投票ボタンがクリックされたときに呼ばれる関数
-const voteForPlayer = (playerId) => {
-  selectedPlayerId.value = playerId; // 見た目のために選択状態を更新
-  emit('vote', playerId); // 親コンポーネントに'vote'イベントを通知
+const voteForPlayer = (player) => {
+  // 確認ダイアログ
+  const isConfirmed = window.confirm(`${player.playerName}に投票しますか？`);
+  
+  // OKが押されたときの処理、キャンセル時には何もしない
+  if (isConfirmed) {
+    selectedPlayerId.value = player.id; // 見た目のために選択状態を更新
+    emit('vote', player.id); // 親コンポーネントに'vote'イベントを通知
+  }
 };
 </script>
 
 <template>
   <div class="container">
     <header class="title">
-      <h1>BeatBox Battle<br><span>Round: </span><br><span>{{ battleInfo.round }}</span></h1>
+      <h1>BeatBox Battle</h1>
+      <h2><span class="round">Round: </span><br>{{ battleInfo.round }}</h2>
     </header>
 
     <div class="image-placeholder">
@@ -34,21 +39,21 @@ const voteForPlayer = (playerId) => {
 
     <div class="vote-section">
       <button
-        @click="voteForPlayer(battleInfo.REDCourner.id)"
+        @click="voteForPlayer(battleInfo.REDCorner)"
         class="vote-btn player1"
-        :class="{ selected: selectedPlayerId === battleInfo.REDCourner.id }"
+        :class="{ selected: selectedPlayerId === battleInfo.REDCorner.id }"
       >
-        {{ battleInfo.REDCourner.playerName }}
+        {{ battleInfo.REDCorner.playerName }}
       </button>
 
       <p class="vote-text">↑ Vote to WINNER ↓</p>
 
       <button
-        @click="voteForPlayer(battleInfo.BLUECourner.id)"
+        @click="voteForPlayer(battleInfo.BLUECorner)"
         class="vote-btn player2"
-        :class="{ selected: selectedPlayerId === battleInfo.BLUECourner.id }"
+        :class="{ selected: selectedPlayerId === battleInfo.BLUECorner.id }"
       >
-        {{ battleInfo.BLUECourner.playerName }}
+        {{ battleInfo.BLUECorner.playerName }}
       </button>
     </div>
   </div>
@@ -72,27 +77,48 @@ const voteForPlayer = (playerId) => {
 }
 
 /* タイトル部分 */
-.title h1 {
+.title h1,
+.title h2{
     font-family: 'Inria Serif';
-    font-size: 2.5rem;
+    font-style: italic;
     text-align: center;
     line-height: 1.2;
+}
+
+.title h1 {
+    font-size: 2.5rem;
+}
+
+.title h2 {
+    font-size: 2rem;
     margin-bottom: 10px;
+}
+
+.span.round {
+  text-align: left;
+}
+
+.vote-text {
+  font-size: 1rem;
+  font-family: 'Inria Serif';
+  font-style: italic;
+  text-align: center;
+  color: #fff;
 }
 
 /* 画像のプレースホルダー */
 .image-placeholder {
     width: 100%;
     height: 200px;
-    background-color: #333;
+    background-color: #000;
     
-    /* ★重要: 子要素を絶対位置で配置するための基準点にする */
+    /* 子要素を絶対位置で配置するための基準点 */
     position: relative; 
 }
 
 /* プレースホルダーの中の画像自体のスタイル */
 .battle-image-style {
-    /* ★重要: 親要素を基準に絶対位置で配置する */
+    /* 親要素を基準に絶対位置で配置 */
     position: absolute;
     top: 50%;
     left: 50%;
